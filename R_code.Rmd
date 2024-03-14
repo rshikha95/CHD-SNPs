@@ -1,5 +1,4 @@
----
-title: "A computational approach to study SNPs associated with congenital heart disease"
+# "A computational approach to study SNPs associated with congenital heart disease"
 author: "Shikha Vashisht"
 date: "2024-01-05"
 
