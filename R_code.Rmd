@@ -1,20 +1,19 @@
-# "A computational approach to study SNPs associated with congenital heart disease"
-author: "Shikha Vashisht"
-date: "2024-01-05"
+# A computational approach to study SNPs associated with congenital heart disease
+## Author: "Shikha Vashisht"
+## date: "2024-01-05"
 
-Introduction: "This R code serves the purpose of systemetic SNP compilation, filtering based on Congenital Heart Disease (CHD) - associated traits, annotation, and integration with human heart organogenesis epigenetic data. The workflow includes the identification of potential CHD-associated enhancers, subsequent analysis for the identification of transcription factor binding sites (TFBS) within these enhancers, and conservation analysis. The script further aims to pinpoint regulatory CHD-SNPs (rCHD-SNPs) using human heart eQTL data. To enhance the robustness of the findings, a cross-validation step with enhancers from the human enhancer disease database is incorporated. The final step involves the visualization of the results, offering a holistic view of the potential regulatory elements associated with Congenital Heart Disease." 
+## Introduction: 
+## This R code serves the purpose of systemetic SNP compilation, filtering based on Congenital Heart Disease (CHD) - associated traits, annotation, and integration with human heart organogenesis epigenetic data. The workflow includes the identification of potential CHD-associated enhancers, subsequent analysis for the identification of transcription factor binding sites (TFBS) within these enhancers, and conservation analysis. The script further aims to pinpoint regulatory CHD-SNPs (rCHD-SNPs) using human heart eQTL data. To enhance the robustness of the findings, a cross-validation step with enhancers from the human enhancer disease database is incorporated. The final step involves the visualization of the results, offering a holistic view of the potential regulatory elements associated with Congenital Heart Disease.
 
----
 ```{r GWAS-catalog and ClinVar SNPs compilation and filteration}
-# Install required packages
+## Install required packages
 
 required_packages <- c("dplyr", "tidyr", "readr", "stringr", "data.table", "ggplot2", "GenomicRanges", "rtracklayer")
 
 install_missing_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
 if(length(install_missing_packages)) install.packages(install_missing_packages)
 
-
-# Load required packages
+## Load required packages
 library(dplyr)
 library(tidyr)
 library(readr)
@@ -25,14 +24,11 @@ library(GenomicRanges)
 library(rtracklayer)
 
 
-# Step 1: Download the SNPs data from GWAS-catalog and Clinvar database using 
-# following links: 
+## Step 1: Download the SNPs data from GWAS-catalog and Clinvar database using following links: 
+## (a) GWAS-Catalog data link: https://www.ebi.ac.uk/gwas/docs/file-downloads
+## (b) ClinVar Database link: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz
 
-# (a) GWAS-Catalog data link: 
-# https://www.ebi.ac.uk/gwas/docs/file-downloads
-# (b) ClinVar Database link: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz
-
-# Step 2: Load the GWAS-catalog and ClinVar genetic variation files
+## Step 2: Load the GWAS-catalog and ClinVar genetic variation files
 
 gwas<- read_tsv("gwas_catalog_v1.0.2-associations_e110_r2023-07-29.tsv", col_names = T)
 
@@ -40,31 +36,29 @@ clinvar_variantSummary<- fread("variant_summary_clinvar.txt", header=T, sep="\t"
 
 clinvar_variantSummary_hg38<- clinvar_variantSummary[clinvar_variantSummary$Assembly == "GRCh38", ]
 
-chd_traits<- read.table("CHD_traits.txt") # Download CHD-traits list from 
-# Supplementary Table 1
+chd_traits<- read.table("CHD_traits.txt") # Download CHD-traits list from Supplementary Table 1
 
 chd_traits_strings<- paste(chd_traits, collapse = "|")
 
-# Step 3: Exclude CHD-unrelated traits.
+## Step 3: Exclude CHD-unrelated traits.
 
 exclusion_regex <- paste(c("Asthma", "down syndrome", "beta blocker", "body fat", "treatment", "hypertension", "diabetes", "treated", "exercise", "lipoprotein", "postoperative","Perioperative", "resting"), collapse = "|")
 
-# Step 4: SNPs filtration based on CHD-traits
+## Step 4: SNPs filtration based on CHD-traits
 
 filt_gwas_chd<- gwas %>%
 filter(stringr::str_detect(gwas$`DISEASE/TRAIT`, regex(chd_traits_strings, ignore_case = TRUE)) & !stringr::str_detect(`DISEASE/TRAIT`, regex(paste0("(?i)", exclusion_regex))))
-
 filt_clinvar_chd<- clinvar_variantSummary_hg38 %>%
 filter(stringr::str_detect(clinvar_variantSummary_hg38$PhenotypeList, regex(chd_traits_strings, ignore_case = TRUE)) & !stringr::str_detect(PhenotypeList, regex(paste0("(?i)", exclusion_regex))))
 
 # Get unique CHD-SNPs from GWAS-catalog and ClinVar Database
 
- # GWAS-catalog
+ ## GWAS-catalog
 
 filt_gwas_chd_uniq<- filt_gwas_chd %>% distinct(SNPS, .keep_all = TRUE)
 nrow(filt_gwas_chd_uniq)
 
-# ClinVar Database
+## ClinVar Database
 
 filt_clinvar_chd_uniq <- filt_clinvar_chd %>% distinct(`RS# (dbSNP)`, .keep_all = TRUE)
 nrow(filt_clinvar_chd_uniq)
@@ -76,13 +70,13 @@ nrow(filt_clinvar_chd_SNV)
 filt_clinvar_chd_SNV_uniq <- filt_clinvar_chd_SNV %>% distinct(`RS# (dbSNP)`, .keep_all = TRUE)
 nrow( filt_clinvar_chd_SNV_uniq)
 
-# Save files with unique CHD-SNPs from GWAS-catalog and ClinVar Database
+## Save files with unique CHD-SNPs from GWAS-catalog and ClinVar Database
 
 write_tsv(filt_gwas_chd_uniq,"chd_filtered_SNPs/gwas_filtered_chd_uniq.txt")
 
 write.table(file="clinvar_filtered_chd_SNV_uniq.txt", filt_clinvar_chd_SNV_uniq, col.names = T, row.names = F, quote=F)
 
-# Prepare the input for ANNOVAR annotation 
+## Prepare the input for ANNOVAR annotation 
 
 # GWAS-catalog CHD-SNPs ANNOVAR Input
 
