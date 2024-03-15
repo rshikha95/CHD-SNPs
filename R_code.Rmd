@@ -6,12 +6,19 @@
 ## This R code serves the purpose of systemetic SNP compilation, filtering based on Congenital Heart Disease (CHD) - associated traits, annotation, and integration with human heart organogenesis epigenetic data. The workflow includes the identification of potential CHD-associated enhancers, subsequent analysis for the identification of transcription factor binding sites (TFBS) within these enhancers, and conservation analysis. The script further aims to pinpoint regulatory CHD-SNPs (rCHD-SNPs) using human heart eQTL data. To enhance the robustness of the findings, a cross-validation step with enhancers from the human enhancer disease database is incorporated. The final step involves the visualization of the results, offering a holistic view of the potential regulatory elements associated with Congenital Heart Disease.
 
 ```{r GWAS-catalog and ClinVar SNPs compilation and filteration}
-## Install required packages
+# Install required packages
 
 required_packages <- c("dplyr", "tidyr", "readr", "stringr", "data.table", "ggplot2", "GenomicRanges", "rtracklayer")
 
-install_missing_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-if(length(install_missing_packages)) install.packages(install_missing_packages)
+missing_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+
+
+if(length(missing_packages) > 0) {
+  install.packages(missing_packages)
+  
+}
+
+print(missing_packages)
 
 ## Load required packages
 library(dplyr)
@@ -23,21 +30,43 @@ library(ggplot2)
 library(GenomicRanges)
 library(rtracklayer)
 
+## Step1: Download the SNPs data from GWAS-catalog and Clinvar database 
+ 
+gwascatalog_url <- "https://www.ebi.ac.uk/gwas/api/search/downloads/alternative"
+file_name <- "gwas_catalog_v1.0.2-associations_e110_r2023-07-29.tsv"
+file_path <- "C:/Users/vashs/OneDrive/Documents/"
+download.file(gwascatalog_url, destfile =paste0(file_path, file_name, sep=""))
 
-## Step 1: Download the SNPs data from GWAS-catalog and Clinvar database using following links: 
-## (a) GWAS-Catalog data link: https://www.ebi.ac.uk/gwas/docs/file-downloads
-## (b) ClinVar Database link: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz
+clinvar_url <- "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
+file_name <- "variant_summary.txt.gz"
+file_path <- "C:/Users/vashs/OneDrive/Documents/"
+download.file(clinvar_url, paste0(file_path, file_name, sep=""))
 
-## Step 2: Load the GWAS-catalog and ClinVar genetic variation files
+# Step 2: Load the GWAS-catalog and ClinVar genetic variation files change to the directory where files are stored
 
+setwd("~/CHD_Project/POSTDOC_PROJECT/new_analysis")
 gwas<- read_tsv("gwas_catalog_v1.0.2-associations_e110_r2023-07-29.tsv", col_names = T)
+head(gwas)
+dim(gwas)
 
 clinvar_variantSummary<- fread("variant_summary_clinvar.txt", header=T, sep="\t", stringsAsFactors = F)
 
+head(clinvar_variantSummary)
+dim(clinvar_variantSummary)
+
+## Filter clinvar variations for hg38 assembly
+
 clinvar_variantSummary_hg38<- clinvar_variantSummary[clinvar_variantSummary$Assembly == "GRCh38", ]
 
-chd_traits<- read.table("CHD_traits.txt") # Download CHD-traits list from Supplementary Table 1
+# Download CHD-traits list from Supplementary Table #1
 
+setwd("~/CHD_Project/POSTDOC_PROJECT/new_analysis/Paper_final_things_for_submissions/supp_mat/Supplementary_Tables")
+
+chd_traits<- read_xlsx("Supp_Table1.xlsx", sheet = 1, skip = 1)
+nrow(chd_traits)
+head(chd_traits)
+chd_traits<- as.data.frame(chd_traits)
+chd_traits<- chd_traits$Term
 chd_traits_strings<- paste(chd_traits, collapse = "|")
 
 ## Step 3: Exclude CHD-unrelated traits.
