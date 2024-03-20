@@ -1502,7 +1502,7 @@ ggsave("boxplot_conservationAnalysis.tiff",plot = conservationBoxPlot,dpi = 300,
 
 ```{r Integration of eQTL data from human heart tissue}
 
-# Download the eQTL data files from GTex database for human heart tissue 
+# Download the eQTL data files from GTEx database for human heart tissue 
 # including "Artery_Aorta.v8.egenes", "Artery_Coronary.v8.egenes", "Heart_Atrial_Appendage.v8.egenes" and "Heart_Left_Ventricle.v8.egenes"
 
 # Load required packages
